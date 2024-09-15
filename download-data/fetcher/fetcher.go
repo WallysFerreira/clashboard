@@ -6,6 +6,9 @@ import (
   "log"
   "encoding/json"
   "os"
+  "context"
+
+  "download-data-script/db"
 )
 
 func MakeRequest(method string, endpoint string) *http.Response {
@@ -39,7 +42,10 @@ func MakeRequest(method string, endpoint string) *http.Response {
   return response
 }
 
-func GetRelevantInformation() {
+func SaveRelevantInformation() {
+  client :=  db.Connect()
+  collection := client.Database("db").Collection("players")
+
   for _, clan := range getClans() {
     for _, member := range clan.GetMembers() {
       var playerInfo RelevantPlayer
@@ -80,6 +86,11 @@ func GetRelevantInformation() {
         playerInfo.Battles = append(playerInfo.Battles, battleInfo)
       }
 
+      _, err := collection.InsertOne(context.Background(), playerInfo)
+      if err != nil {
+        log.Fatal(err)
+      }
+
       /*
       if len(playerInfo.Battles) > 0 {
         log.Println(playerInfo.Battles[0].Deck[0].Name)
@@ -90,7 +101,7 @@ func GetRelevantInformation() {
 }
 
 func getClans() []Clan {
-  response := MakeRequest(http.MethodGet, "https://api.clashroyale.com/v1/clans?maxMembers=20&limit=10")
+  response := MakeRequest(http.MethodGet, "https://api.clashroyale.com/v1/clans?minMembers=10&limit=10")
   defer response.Body.Close()
 
   var clanItems ClanItems
