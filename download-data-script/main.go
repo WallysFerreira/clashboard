@@ -19,7 +19,7 @@ func main() {
 
 
   c := make(chan fetcher.RelevantPlayer)
-  getRelevantPlayer(c)
+  go getRelevantPlayer(c)
 
   relevantPlayer := <-c
 
