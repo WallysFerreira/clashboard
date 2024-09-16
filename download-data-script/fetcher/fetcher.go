@@ -6,9 +6,6 @@ import (
   "log"
   "encoding/json"
   "os"
-  "context"
-
-  "download-data-script/db"
 )
 
 func MakeRequest(method string, endpoint string) *http.Response {
@@ -42,65 +39,7 @@ func MakeRequest(method string, endpoint string) *http.Response {
   return response
 }
 
-func SaveRelevantInformation() {
-  client :=  db.Connect()
-  collection := client.Database("db").Collection("players")
-
-  for _, clan := range getClans() {
-    for _, member := range clan.GetMembers() {
-      var playerInfo RelevantPlayer
-
-      responsePlayer := member.GetPlayer()
-
-      playerInfo.Name = member.Name
-      playerInfo.Level = member.ExpLevel
-      playerInfo.Trophies = responsePlayer.Trophies
-      playerInfo.BattlesPlayed = responsePlayer.BattleCount
-
-      /*
-      log.Println("Player name: ", playerInfo.Name)
-      log.Println("Player level: ", playerInfo.Level)
-      log.Println("Player trophies: ", playerInfo.Trophies)
-      log.Println("Player battles: ", playerInfo.BattlesPlayed)
-      */
-
-      responseBattles := member.GetBattles()
-
-      for _, battle := range responseBattles {
-        var battleInfo RelevantBattle
-
-        if (battle.BattleData[0].TowersDestroyed > battle.OppBattleData[0].TowersDestroyed) {
-          battleInfo.Won = true
-        } else {
-          battleInfo.Won = false
-        }
-
-        battleInfo.BattleTime = battle.Time
-        battleInfo.Deck = battle.BattleData[0].Deck
-        battleInfo.OppDeck = battle.OppBattleData[0].Deck
-        battleInfo.TowersDestroyed = battle.BattleData[0].TowersDestroyed
-        battleInfo.OppTowersDestroyed = battle.OppBattleData[0].TowersDestroyed
-        battleInfo.TrophiesOnStart = battle.BattleData[0].TrophiesOnStart
-        battleInfo.OppTrophiesOnStart = battle.OppBattleData[0].TrophiesOnStart
-
-        playerInfo.Battles = append(playerInfo.Battles, battleInfo)
-      }
-
-      _, err := collection.InsertOne(context.Background(), playerInfo)
-      if err != nil {
-        log.Fatal(err)
-      }
-
-      /*
-      if len(playerInfo.Battles) > 0 {
-        log.Println(playerInfo.Battles[0].Deck[0].Name)
-      }
-      */
-    }
-  }
-}
-
-func getClans() []Clan {
+func GetClans() []Clan {
   response := MakeRequest(http.MethodGet, "https://api.clashroyale.com/v1/clans?minMembers=10&limit=10")
   defer response.Body.Close()
 
