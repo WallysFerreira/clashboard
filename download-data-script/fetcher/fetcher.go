@@ -40,7 +40,7 @@ func MakeRequest(method string, endpoint string) *http.Response {
 }
 
 func GetClans() []Clan {
-  response := MakeRequest(http.MethodGet, "https://api.clashroyale.com/v1/clans?minMembers=10&limit=10")
+  response := MakeRequest(http.MethodGet, "https://api.clashroyale.com/v1/clans?minMembers=10&limit=100")
   defer response.Body.Close()
 
   var clanItems ClanItems

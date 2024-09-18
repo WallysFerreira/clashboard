@@ -14,19 +14,8 @@ func main() {
   if err != nil {
     log.Fatal("Error loading .env file")
   }
-  client :=  db.Connect()
-  collection := client.Database("db").Collection("players")
 
-
-  c := make(chan fetcher.RelevantPlayer)
-  go getRelevantPlayer(c)
-
-  relevantPlayer := <-c
-
-  _, err = collection.InsertOne(context.Background(), relevantPlayer)
-  if err != nil {
-    log.Fatal(err)
-  }
+  getRelevantPlayersAndSave()
 }
 
 func makeRelevantPlayerFrom(member fetcher.Member) fetcher.RelevantPlayer {
@@ -39,12 +28,10 @@ func makeRelevantPlayerFrom(member fetcher.Member) fetcher.RelevantPlayer {
   playerInfo.Trophies = responsePlayer.Trophies
   playerInfo.BattlesPlayed = responsePlayer.BattleCount
 
-  /*
   log.Println("Player name: ", playerInfo.Name)
   log.Println("Player level: ", playerInfo.Level)
   log.Println("Player trophies: ", playerInfo.Trophies)
   log.Println("Player battles: ", playerInfo.BattlesPlayed)
-  */
 
   responseBattles := member.GetBattles()
 
@@ -77,11 +64,18 @@ func makeRelevantPlayerFrom(member fetcher.Member) fetcher.RelevantPlayer {
   return playerInfo
 }
 
-func getRelevantPlayer(c chan fetcher.RelevantPlayer) {
+func getRelevantPlayersAndSave() {
+  client :=  db.Connect()
+  collection := client.Database("db").Collection("players")
+
   for _, clan := range fetcher.GetClans() {
     for _, member := range clan.GetMembers() {
-      c <- makeRelevantPlayerFrom(member)
+      relevantPlayer := makeRelevantPlayerFrom(member)
+
+      _, err := collection.InsertOne(context.Background(), relevantPlayer)
+      if err != nil {
+        log.Fatal(err)
+      }
     }
   }
-
 }
